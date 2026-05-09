@@ -66,9 +66,11 @@ class CameraModel: NSObject, ObservableObject, AVCapturePhotoCaptureDelegate {
 
             self.capturedImages.append(imageData)
 
-            print("📸 FOTO REAL CAPTURADA")
+            UploadManager.shared.uploadImage(imageData: imageData)
 
-            print("Total fotos: \\(self.capturedImages.count)")
+           print("📸 FOTO REAL CAPTURADA")
+
+           print("Total fotos: \\(self.capturedImages.count)")
         }
     }
 }

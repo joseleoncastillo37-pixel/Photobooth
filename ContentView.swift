@@ -2,7 +2,7 @@ import SwiftUI
 
 struct ContentView: View {
 
-    @StateObject var camera = CameraModel()
+    @StateObject private var camera = CameraModel()
 
     @State private var countdown = 0
     @State private var currentShot = 1
@@ -10,6 +10,7 @@ struct ContentView: View {
 
     @State private var isCapturing = false
     @State private var showSettings = false
+    @State private var isSessionActive = false
 
     var body: some View {
 
@@ -18,50 +19,70 @@ struct ContentView: View {
             CameraView(camera: camera)
                 .ignoresSafeArea()
 
+            Color.black.opacity(0.25)
+                .ignoresSafeArea()
+
             VStack(spacing: 40) {
 
-                if isCapturing {
-
-                    Text("📸 FOTO \(currentShot)")
-                        .font(.system(size: 60, weight: .bold))
-                        .foregroundColor(.white)
-                }
+                Spacer()
 
                 if countdown > 0 {
 
                     Text("\(countdown)")
-                        .font(.system(size: 150, weight: .bold))
+                        .font(.system(size: 180, weight: .heavy))
                         .foregroundColor(.white)
 
-                } else {
+                } else if isCapturing {
 
-                    Text("PHOTOBOOTH")
-                        .font(.system(size: 50, weight: .bold))
-                        .foregroundColor(.white)
-                        .onLongPressGesture {
+                    VStack(spacing: 20) {
 
-                            showSettings = true
-                        }
+                        Text("📸")
+                            .font(.system(size: 80))
 
-                    Button(action: {
+                        Text("CAPTURANDO")
+                            .font(.system(size: 40, weight: .bold))
+                            .foregroundColor(.white)
 
-                        startCountdown()
-
-                    }) {
-
-                        Text("TOCA PARA COMENZAR")
-                            .font(.title)
-                            .fontWeight(.bold)
-                            .foregroundColor(.black)
-                            .frame(width: 350, height: 90)
-                            .background(Color.white)
-                            .cornerRadius(20)
+                        Text("Foto \(currentShot) de \(totalShots)")
+                            .font(.title2)
+                            .foregroundColor(.white.opacity(0.8))
                     }
 
-                    Text("Modo actual: \(totalShots) fotos")
-                        .foregroundColor(.white)
+                } else if !isSessionActive {
+
+                    VStack(spacing: 30) {
+
+                        Text("PHOTOBOOTH")
+                            .font(.system(size: 50, weight: .bold))
+                            .foregroundColor(.white)
+                            .onLongPressGesture {
+
+                                showSettings = true
+                            }
+
+                        Button(action: {
+
+                            startSession()
+
+                        }) {
+
+                            Text("TOCA PARA COMENZAR")
+                                .font(.title)
+                                .fontWeight(.bold)
+                                .foregroundColor(.black)
+                                .frame(width: 350, height: 90)
+                                .background(Color.white)
+                                .cornerRadius(25)
+                        }
+
+                        Text("Modo actual: \(totalShots) fotos")
+                            .foregroundColor(.white.opacity(0.8))
+                    }
                 }
+
+                Spacer()
             }
+            .padding()
         }
         .sheet(isPresented: $showSettings) {
 
@@ -90,10 +111,18 @@ struct ContentView: View {
                 }
 
                 Text("Actual: \(totalShots) fotos")
-                    .padding(.top, 30)
+                    .padding(.top, 20)
             }
             .padding()
         }
+    }
+
+    func startSession() {
+
+        isSessionActive = true
+        currentShot = 1
+
+        startCountdown()
     }
 
     func startCountdown() {
@@ -123,7 +152,7 @@ struct ContentView: View {
 
         camera.takePhoto()
 
-        DispatchQueue.main.asyncAfter(deadline: .now() + 1) {
+        DispatchQueue.main.asyncAfter(deadline: .now() + 1.5) {
 
             isCapturing = false
 
@@ -135,8 +164,17 @@ struct ContentView: View {
 
             } else {
 
-                currentShot = 1
+                finishSession()
             }
+        }
+    }
+
+    func finishSession() {
+
+        DispatchQueue.main.asyncAfter(deadline: .now() + 1) {
+
+            currentShot = 1
+            isSessionActive = false
         }
     }
 }
