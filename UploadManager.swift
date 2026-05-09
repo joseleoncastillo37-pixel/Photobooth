@@ -6,6 +6,7 @@ class UploadManager {
 
     private init() {}
 
+    // CAMBIA ESTA IP SI TU SERVIDOR CAMBIA
     private let serverURL = "http://172.16.20.103/upload"
 
     func uploadImage(imageData: Data) {
@@ -27,9 +28,12 @@ class UploadManager {
 
         request.setValue("\(imageData.count)", forHTTPHeaderField: "Content-Length")
 
-        print("📤 Subiendo foto...")
+        print("📤 Subiendo foto al servidor...")
 
-        URLSession.shared.uploadTask(with: request, from: imageData) { data, response, error in
+        let task = URLSession.shared.uploadTask(
+            with: request,
+            from: imageData
+        ) { data, response, error in
 
             if let error = error {
 
@@ -40,20 +44,35 @@ class UploadManager {
                 return
             }
 
-            if let httpResponse = response as? HTTPURLResponse {
+            guard let httpResponse = response as? HTTPURLResponse else {
 
-                print("🌐 Status Code: \(httpResponse.statusCode)")
+                print("❌ Respuesta inválida servidor")
 
-                if httpResponse.statusCode == 200 {
-
-                    print("✅ FOTO SUBIDA CORRECTAMENTE")
-
-                } else {
-
-                    print("⚠️ Respuesta inesperada servidor")
-                }
+                return
             }
 
-        }.resume()
+            print("🌐 Status Code: \(httpResponse.statusCode)")
+
+            switch httpResponse.statusCode {
+
+            case 200:
+
+                print("✅ FOTO SUBIDA CORRECTAMENTE")
+
+            case 404:
+
+                print("⚠️ Endpoint /upload no encontrado")
+
+            case 500:
+
+                print("⚠️ Error interno servidor")
+
+            default:
+
+                print("⚠️ Respuesta inesperada")
+            }
+        }
+
+        task.resume()
     }
 }

@@ -1,17 +1,27 @@
 import SwiftUI
 import AVFoundation
+import Combine
 
 class CameraModel: NSObject, ObservableObject, AVCapturePhotoCaptureDelegate {
 
     let session = AVCaptureSession()
 
-    let output = AVCapturePhotoOutput()
+    private let output = AVCapturePhotoOutput()
 
     @Published var capturedImages: [Data] = []
 
-    func startSession() {
+    override init() {
+
+        super.init()
+
+        configureSession()
+    }
+
+    private func configureSession() {
 
         session.beginConfiguration()
+
+        session.sessionPreset = .photo
 
         guard let device = AVCaptureDevice.default(
             .builtInWideAngleCamera,
@@ -19,17 +29,25 @@ class CameraModel: NSObject, ObservableObject, AVCapturePhotoCaptureDelegate {
             position: .front
         ) else {
 
-            return
-        }
-
-        guard let input = try? AVCaptureDeviceInput(device: device) else {
+            print("❌ No se encontró cámara")
 
             return
         }
 
-        if session.canAddInput(input) {
+        do {
 
-            session.addInput(input)
+            let input = try AVCaptureDeviceInput(device: device)
+
+            if session.canAddInput(input) {
+
+                session.addInput(input)
+            }
+
+        } catch {
+
+            print("❌ Error creando input cámara")
+
+            return
         }
 
         if session.canAddOutput(output) {
@@ -37,18 +55,44 @@ class CameraModel: NSObject, ObservableObject, AVCapturePhotoCaptureDelegate {
             session.addOutput(output)
         }
 
-        session.sessionPreset = .photo
-
         session.commitConfiguration()
+    }
 
-        session.startRunning()
+    func startSession() {
+
+        DispatchQueue.global(qos: .userInitiated).async {
+
+            if !self.session.isRunning {
+
+                self.session.startRunning()
+
+                print("✅ Cámara iniciada")
+            }
+        }
+    }
+
+    func stopSession() {
+
+        DispatchQueue.global(qos: .userInitiated).async {
+
+            if self.session.isRunning {
+
+                self.session.stopRunning()
+
+                print("🛑 Cámara detenida")
+            }
+        }
     }
 
     func takePhoto() {
 
         let settings = AVCapturePhotoSettings()
 
+        settings.flashMode = .off
+
         output.capturePhoto(with: settings, delegate: self)
+
+        print("📸 Capturando foto...")
     }
 
     func photoOutput(
@@ -57,7 +101,18 @@ class CameraModel: NSObject, ObservableObject, AVCapturePhotoCaptureDelegate {
         error: Error?
     ) {
 
+        if let error = error {
+
+            print("❌ Error capturando foto")
+
+            print(error.localizedDescription)
+
+            return
+        }
+
         guard let imageData = photo.fileDataRepresentation() else {
+
+            print("❌ Error generando JPG")
 
             return
         }
@@ -66,11 +121,11 @@ class CameraModel: NSObject, ObservableObject, AVCapturePhotoCaptureDelegate {
 
             self.capturedImages.append(imageData)
 
+            print("✅ FOTO CAPTURADA")
+
+            print("📦 Total fotos: \(self.capturedImages.count)")
+
             UploadManager.shared.uploadImage(imageData: imageData)
-
-           print("📸 FOTO REAL CAPTURADA")
-
-           print("Total fotos: \\(self.capturedImages.count)")
         }
     }
 }
@@ -83,8 +138,6 @@ struct CameraView: UIViewRepresentable {
 
         let view = UIView(frame: UIScreen.main.bounds)
 
-        camera.startSession()
-
         let previewLayer = AVCaptureVideoPreviewLayer(session: camera.session)
 
         previewLayer.frame = view.bounds
@@ -92,6 +145,8 @@ struct CameraView: UIViewRepresentable {
         previewLayer.videoGravity = .resizeAspectFill
 
         view.layer.addSublayer(previewLayer)
+
+        camera.startSession()
 
         return view
     }

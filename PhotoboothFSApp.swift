@@ -8,6 +8,7 @@ struct PhotoboothFSApp: App {
         WindowGroup {
 
             ContentView()
+                .preferredColorScheme(.dark)
         }
     }
 }

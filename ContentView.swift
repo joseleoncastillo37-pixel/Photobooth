@@ -22,7 +22,7 @@ struct ContentView: View {
             Color.black.opacity(0.25)
                 .ignoresSafeArea()
 
-            VStack(spacing: 40) {
+            VStack {
 
                 Spacer()
 
@@ -39,13 +39,13 @@ struct ContentView: View {
                         Text("📸")
                             .font(.system(size: 80))
 
-                        Text("CAPTURANDO")
+                        Text("CAPTURANDO...")
                             .font(.system(size: 40, weight: .bold))
                             .foregroundColor(.white)
 
                         Text("Foto \(currentShot) de \(totalShots)")
                             .font(.title2)
-                            .foregroundColor(.white.opacity(0.8))
+                            .foregroundColor(.white.opacity(0.85))
                     }
 
                 } else if !isSessionActive {
@@ -53,7 +53,7 @@ struct ContentView: View {
                     VStack(spacing: 30) {
 
                         Text("PHOTOBOOTH")
-                            .font(.system(size: 50, weight: .bold))
+                            .font(.system(size: 52, weight: .bold))
                             .foregroundColor(.white)
                             .onLongPressGesture {
 
@@ -119,7 +119,10 @@ struct ContentView: View {
 
     func startSession() {
 
+        guard !isSessionActive else { return }
+
         isSessionActive = true
+
         currentShot = 1
 
         startCountdown()
